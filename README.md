@@ -4,105 +4,83 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Protocol: A2A v1.0](https://img.shields.io/badge/Protocol-A2A%20v1.0-orange.svg)](https://github.com/a2a-protocol)
 
-**Hermes ↔ OpenCode A2A Bridge** is a bidirectional integration layer connecting [Hermes Agent](https://github.com/NousResearch/hermes-agent) with [OpenCode](https://opencode.ai) and the [Oh-My-OpenAgent (OMO)](https://github.com/code-yeongyu/oh-my-openagent) multi-agent harness using the standard **Agent-to-Agent (A2A)** protocol.
+**Hermes ↔ OpenCode A2A Bridge** — двунаправленная интеграция между [Hermes Agent](https://github.com/NousResearch/hermes-agent) и средой разработки [OpenCode](https://opencode.ai) + [Oh-My-OpenAgent (OMO)](https://github.com/code-yeongyu/oh-my-openagent) по стандартному протоколу **Agent-to-Agent (A2A)** (Linux Foundation & Google).
 
 ---
 
-## 📖 Overview
+## 📖 Обзор
 
-Modern AI development workflows benefit from decoupling **high-level orchestration** from **deep code execution**:
+Проект реализует строгое разделение ролей между двумя специализированными AI-системами:
 
-- **Hermes Agent (Orchestrator)**: User interaction across messaging platforms, project intent tracking, long-term memory (Mem0, vector stores), deep web research, and milestone verification.
-- **OpenCode + OMO (Engineering Engine)**: Autonomous multi-file code editing, LSP diagnostics (Rust Analyzer, TypeScript), compiler loops (`cargo`, `pnpm`, `pytest`), test execution, and git workflows.
-
-This bridge enables seamless, protocol-compliant collaboration between both agent environments.
+- **Hermes Agent (Оркестратор)**: Взаимодействие с пользователем (Telegram / CLI / Desktop), долгосрочная память (Mem0 / Qdrant), глубокий веб-поиск и ресерч, декомпозиция задач и верификация результатов.
+- **OpenCode + OMO (Инженерный исполнитель)**: Многофайловая кодогенерация, LSP-анализ кода (Rust Analyzer, TypeScript), запуск компиляторов и линтеров (`cargo`, `pnpm`, `pytest`), прогон тестов и оформление Pull Request.
 
 ---
 
-## 🏛️ Architecture
+## 🏛️ Архитектура
 
 ```
-User (Telegram / CLI / Web)
+Пользователь (Telegram / CLI / Desktop)
   │
   ▼
 Hermes Agent (Port :9900)
+  │  [Плагин: opencode_a2a]
+  │  Инструмент: opencode_delegate(goal, directory, context_id)
   │
-  ├── [Inbound / Delegation]
-  │     │  a2a_call / opencode_delegate
-  │     ▼
-  │   opencode-a2a Adapter (Port :8000)
-  │     │  REST / SSE Stream
-  │     ▼
-  │   OpenCode Server (Port :4096)
-  │     │
-  │     ▼
-  │   Oh-My-OpenAgent (OMO Harness)
-  │   (Sisyphus → Hephaestus, Oracle, Momus)
+  ├── [Делегирование в OpenCode] ──→ opencode-a2a Adapter (Port :8000)
+  │                                    │ (REST / SSE Stream)
+  │                                    ▼
+  │                                  opencode serve (Port :4096)
+  │                                    │
+  │                                    ▼
+  │                                  Oh-My-OpenAgent (OMO Harness)
+  │                                  (Sisyphus → Hephaestus, Oracle, Momus)
   │
-  └── [Outbound / Consultation]
-        ▲
-        │  ask-hermes Skill (JSON-RPC A2A)
-        └──────────────────────────────────┘
+  └── [Обратные запросы к Hermes] ←── ask-hermes Skill (JSON-RPC A2A)
+                                      (Web Research, Mem0 Memory, User Q&A)
 ```
 
 ---
 
-## ✨ Key Features
-
-- **Bidirectional Peer Communication**:
-  - **Hermes → OpenCode**: Delegate complex implementation, refactoring, and test suites.
-  - **OpenCode → Hermes**: Query long-term memory, request external web research, or escalate decisions to the user.
-- **Session Continuity (`context_id`)**:
-  - Maintains conversation and project context across multiple turns using mapped SQLite session bindings.
-- **Real-Time SSE Streaming**:
-  - Streams execution events and progress in real time via Server-Sent Events (`/message:stream`).
-- **Resilient Execution**:
-  - Configurable extended upstream timeouts (up to 30+ minutes) to accommodate long compilation and testing cycles.
-  - Process group lifecycle management to clean up background processes upon task cancellation.
-
----
-
-## 📁 Repository Structure
+## 📦 Компоненты репозитория
 
 ```
 hermes-opencode-a2a/
 ├── plugins/
 │   └── hermes/
-│       └── opencode_a2a/          # Native Hermes plugin (opencode_delegate tool)
+│       └── opencode_a2a/          # Нативный плагин для Hermes Agent (тул opencode_delegate)
+│           ├── plugin.yaml
+│           ├── __init__.py
+│           └── client.py
 ├── skills/
 │   └── opencode/
-│       └── ask-hermes/            # OpenCode skill & CLI for querying Hermes
-├── scripts/
-│   └── opencode_a2a_client.py     # Standalone Python client (Sync + SSE Stream)
-├── examples/
-│   ├── delegate_task_example.py   # Synchronous delegation example
-│   └── stream_progress_example.py # Streaming delegation example
+│       └── ask-hermes/            # Навык для OpenCode / OMO (обратный вызов Hermes)
+│           ├── SKILL.md
+│           └── scripts/
+│               └── ask_hermes.py
 ├── docs/
-│   └── deep-research-a2a.md       # Protocol analysis & implementation notes
+│   └── deep-research-a2a.md       # Исследование спецификации A2A и аудита архитектуры
 ├── LICENSE
 └── README.md
 ```
 
 ---
 
-## 🚀 Quick Start
+## 🚀 Установка и настройка
 
-### 1. Prerequisites
-
+### 1. Требования
 - Python 3.11+
 - Node.js 20+
-- OpenCode CLI (`npm install -g opencode-ai`)
-- OpenCode A2A adapter (`uv tool install opencode-a2a`)
+- OpenCode (`npm install -g opencode-ai`)
+- OpenCode A2A Adapter (`uv tool install opencode-a2a`)
 
-### 2. Start OpenCode Services
-
-Start the OpenCode server and the A2A gateway adapter:
+### 2. Запуск сервисов OpenCode
 
 ```bash
-# Terminal 1: Start OpenCode server
+# 1. Запуск OpenCode Runtime
 opencode serve --hostname 127.0.0.1 --port 4096
 
-# Terminal 2: Start A2A adapter
+# 2. Запуск A2A Шлюза
 A2A_STATIC_AUTH_CREDENTIALS='[{"scheme":"bearer","token":"your-secure-token","principal":"hermes"}]' \
 OPENCODE_BASE_URL=http://127.0.0.1:4096 \
 A2A_HOST=127.0.0.1 \
@@ -113,18 +91,20 @@ A2A_ALLOW_DIRECTORY_OVERRIDE=true \
 opencode-a2a serve
 ```
 
-### 3. Install the Hermes Plugin
+### 3. Установка плагина в Hermes Agent
 
-Copy the plugin directory into your Hermes plugins folder:
+Скопируйте директорию плагина в папку плагинов Hermes:
 
 ```bash
 mkdir -p ~/.hermes/plugins/
 cp -r plugins/hermes/opencode_a2a ~/.hermes/plugins/
 ```
 
-### 4. Install the OpenCode Skill
+Плагин автоматически регистрирует нативный инструмент модели `opencode_delegate`.
 
-Copy the skill directory into your OpenCode skills configuration:
+### 4. Установка навыка в OpenCode
+
+Скопируйте навык в конфигурацию OpenCode:
 
 ```bash
 mkdir -p ~/.config/opencode/skills/
@@ -133,68 +113,43 @@ cp -r skills/opencode/ask-hermes ~/.config/opencode/skills/
 
 ---
 
-## 💡 Usage Examples
+## 💡 Примеры работы
 
-### 1. Delegating a Task from Hermes (Python Client)
+### 1. Делегирование из Hermes в OpenCode
+Hermes вызывает инструмент `opencode_delegate` во время диалога:
 
 ```python
-from opencode_a2a_client import call_opencode
-
-result = call_opencode(
-    message="Implement user authentication middleware and write unit tests.",
+# Вызов инструмента внутри Hermes:
+opencode_delegate(
+    goal="Внедрить модуль аутентификации JWT и написать unit-тесты.",
+    directory="/home/user/projects/my-app",
     context_id="feature-auth-service",
-    directory="/path/to/your/project",
     timeout=1800
 )
-
-print(f"Status: {result['state']}")
-print(f"Summary:\n{result['output']}")
 ```
 
-### 2. Streaming Real-Time Progress (SSE)
-
-```python
-from opencode_a2a_client import stream_opencode
-
-for event in stream_opencode(
-    message="Run test suite and fix failing tests.",
-    context_id="feature-auth-service",
-    directory="/path/to/your/project",
-    on_event=lambda e: print(f"Progress event: {e.get('type')}")
-):
-    pass
-```
-
-### 3. Consulting Hermes from OpenCode (OMO Skill)
-
-When an OpenCode sub-agent needs documentation or user input during implementation:
+### 2. Обратный вызов из OpenCode в Hermes
+Когда агент внутри OMO (Sisyphus/Hephaestus) сталкивается с необходимостью внешнего поиска, чтения памяти или вопроса человеку:
 
 ```bash
 python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py \
-  "Research best practices for JWT rotation with refresh tokens in FastAPI"
+  "Найди паттерны безопасной ротации refresh токенов для FastAPI"
 ```
 
 ---
 
-## ⚙️ Configuration Reference
+## ⚙️ Переменные конфигурации
 
-| Variable | Description | Default |
+| Переменная | Описание | По умолчанию |
 |---|---|---|
-| `OPENCODE_BASE_URL` | Base URL of the upstream OpenCode server | `http://127.0.0.1:4096` |
-| `A2A_PORT` | Port for the A2A adapter | `8000` |
-| `OPENCODE_TIMEOUT` | Upstream synchronous request timeout (seconds) | `1800.0` |
-| `OPENCODE_TIMEOUT_STREAM` | Upstream streaming request timeout (seconds) | `1800.0` |
-| `A2A_STREAM_IDLE_TIMEOUT_SECONDS` | Maximum allowed idle time during streaming | `1800.0` |
-| `A2A_ALLOW_DIRECTORY_OVERRIDE` | Allow caller to target specific project folders | `true` |
+| `OPENCODE_A2A_URL` | URL шлюза OpenCode A2A | `http://127.0.0.1:8000` |
+| `OPENCODE_A2A_TOKEN` | Bearer-токен для авторизации в адаптере | — |
+| `OPENCODE_TIMEOUT` | Таймаут синхронного ожидания задач (секунды) | `1800.0` |
+| `OPENCODE_TIMEOUT_STREAM` | Таймаут стриминга задач (секунды) | `1800.0` |
+| `A2A_ALLOW_DIRECTORY_OVERRIDE` | Разрешение выбора рабочей папки проекта | `true` |
 
 ---
 
-## 🤝 Contributing
+## 📄 Лицензия
 
-Contributions, issues, and feature requests are welcome! Feel free to check the [issues page](https://github.com/torch817/hermes-opencode-a2a/issues).
-
----
-
-## 📄 License
-
-Distributed under the [MIT License](LICENSE).
+Распространяется под лицензией [MIT](LICENSE).
