@@ -1,12 +1,11 @@
 #!/usr/bin/env python3
 """
 OpenCode -> Hermes A2A Bridge CLI Helper.
-Allows OMO agents to query Hermes for external research, memory, and user clarification.
+Allows OpenCode agents to query Hermes for persistent memory, architectural decisions, and user clarification.
 """
 
 import argparse
 import json
-import sys
 import urllib.error
 import urllib.request
 import uuid
@@ -24,7 +23,7 @@ def ask_hermes(query: str, context_id: str | None = None, timeout: int = 180) ->
                 "parts": [{"type": "text", "text": query}],
             }
         },
-        "id": f"omo-req-{uuid.uuid4().hex[:8]}",
+        "id": f"opencode-req-{uuid.uuid4().hex[:8]}",
     }
     if context_id:
         payload["params"]["message"]["contextId"] = context_id
@@ -63,7 +62,7 @@ def ask_hermes(query: str, context_id: str | None = None, timeout: int = 180) ->
 
 def main():
     parser = argparse.ArgumentParser(description="Query Hermes Agent via A2A protocol.")
-    parser.add_argument("query", help="Query, research prompt, or question for Hermes")
+    parser.add_argument("query", help="Query, clarification prompt, or memory request for Hermes")
     parser.add_argument("--context-id", "-c", default=None, help="Context/Session ID")
     parser.add_argument("--timeout", "-t", type=int, default=180, help="Timeout in seconds")
     args = parser.parse_args()

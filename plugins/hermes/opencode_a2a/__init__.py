@@ -1,5 +1,5 @@
 """
-Hermes Plugin for OpenCode + OMO A2A Delegation.
+Hermes Plugin for OpenCode + Oh-My-OpenAgent (OMO) A2A Delegation.
 """
 
 from typing import Any, Dict
@@ -26,7 +26,7 @@ _OPENCODE_SCHEMA = {
     "type": "function",
     "function": {
         "name": "opencode_delegate",
-        "description": "Delegate complex coding, refactoring, bug fixing, test running, or codebase implementations to OpenCode + Oh-My-OpenAgent (OMO) over A2A protocol. OMO orchestrates parallel agents (Sisyphus, Hephaestus, Oracle) to implement and verify code changes.",
+        "description": "Delegate complex coding, refactoring, bug fixing, test running, or codebase implementations to OpenCode + Oh-My-OpenAgent (OMO) over A2A protocol. OMO orchestrates parallel specialized agents (Sisyphus, Hephaestus, Oracle, Momus) to implement and verify code changes.",
         "parameters": {
             "type": "object",
             "properties": {

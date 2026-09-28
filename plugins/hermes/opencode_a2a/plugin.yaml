@@ -1,6 +1,6 @@
 name: opencode-a2a
 version: "1.0.0"
-description: "A2A Bridge plugin connecting Hermes Agent with OpenCode and Oh-My-OpenAgent (OMO) for autonomous software engineering delegation."
+description: "A2A Bridge plugin connecting Hermes Agent with OpenCode and Oh-My-OpenAgent (OMO) for autonomous multi-agent software engineering delegation."
 author: "Rec & Boba"
 toolsets:
   - opencode
