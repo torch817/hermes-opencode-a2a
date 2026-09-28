@@ -114,6 +114,9 @@ hermes-opencode-a2a/
 │           ├── __init__.py
 │           └── client.py
 ├── skills/
+│   ├── hermes/
+│   │   └── omo-agents-guide/      # Навык Hermes с каталогом всех агентов OMO
+│   │       └── SKILL.md
 │   └── opencode/
 │       └── ask-hermes/            # Навык для OpenCode + OMO (обратный вызов Hermes)
 │           ├── SKILL.md
