@@ -16,10 +16,10 @@ When working inside OpenCode / OMO (Sisyphus, Hephaestus, Oracle), use this skil
 
 1. **External Web & Documentation Research**:
    - Looking up API docs, crates/libraries, or academic papers that are not available locally.
-   - Example: *"Find the latest Rapier 3D 0.18 character controller WASM bindings and example implementations."*
+   - Example: *"Find the latest FastAPI OAuth2 Bearer token rotation implementation patterns."*
 2. **Project Memory & Past Architecture Decisions**:
    - Querying long-term Mem0 memory for user preferences, previous milestone decisions, or system constraints.
-   - Example: *"What were the agreed parameters for the slide boost formula in VHOLUME ARENA?"*
+   - Example: *"What were the agreed database connection pooling parameters for this service?"*
 3. **Escalating Clarifications to the User**:
    - When a design trade-off has multiple viable paths and needs human input.
 
@@ -33,7 +33,7 @@ python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Your questio
 
 With context continuity:
 ```bash
-python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Follow-up question" --context-id "proj-vholume-arena"
+python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Follow-up question" --context-id "feature-auth-service"
 ```
 
 ## Response Handling

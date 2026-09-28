@@ -62,7 +62,7 @@ Oh-My-OpenAgent (OMO Multi-Agent Harness)
 ```
 
 ### 2.2. Механика сессий и Session Continuity (`context_id`)
-* При первом вызове с уникальным `context_id` (например, `proj-vholume-arena-m2`), A2A-адаптер создает новую сессию в OpenCode через `POST http://127.0.0.1:4096/session?directory=/path`.
+* При первом вызове с уникальным `context_id` (например, `project-feature-auth`), A2A-адаптер создает новую сессию в OpenCode через `POST http://127.0.0.1:4096/session?directory=/path`.
 * Внутренняя связка `context_id ↔ opencode_session_id` сохраняется в локальной SQLite базе `~/.local/share/opencode-a2a/opencode-a2a.db`.
 * При повторных вызовах с тем же `context_id` адаптер автоматически направляет запрос в существующую сессию `POST /session/{id}/message`, сохраняя непрерывную историю рассуждений и контекст проекта без повторной передачи всех исходников.
 

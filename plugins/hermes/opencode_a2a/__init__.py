@@ -40,7 +40,7 @@ _OPENCODE_SCHEMA = {
                 },
                 "context_id": {
                     "type": "string",
-                    "description": "Milestone or feature session identifier (e.g. 'vholume-arena-m2') to maintain session memory.",
+                    "description": "Milestone or feature session identifier (e.g. 'feature-auth-service') to maintain session memory.",
                 },
                 "timeout": {
                     "type": "integer",
