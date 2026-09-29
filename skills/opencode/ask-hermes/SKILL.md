@@ -1,7 +1,7 @@
 ---
 name: ask-hermes
 description: "Use when OpenCode/OMO sub-agents need cross-session memory lookup, user clarification, or architectural guidance from Hermes Agent via A2A."
-version: 1.0.0
+version: 1.1.0
 author: Hermes + OpenCode Integration
 license: MIT
 metadata:
@@ -10,7 +10,7 @@ metadata:
 
 # Ask Hermes (A2A Bridge for OpenCode + OMO)
 
-When working inside OpenCode with the **Oh-My-OpenAgent (OMO)** harness (Sisyphus, Hephaestus, Oracle, Momus), use this skill to query **Hermes Agent** as an architectural peer over the A2A protocol (port 9900).
+When working inside OpenCode with the **Oh-My-OpenAgent (OMO)** harness (Sisyphus, Hephaestus, Oracle, Momus), use this skill to query **Hermes Agent** as an architectural peer over the A2A v1.0 protocol (port 9900).
 
 ## When OMO Sub-Agents Should Call Hermes
 
@@ -23,6 +23,14 @@ When working inside OpenCode with the **Oh-My-OpenAgent (OMO)** harness (Sisyphu
 3. **Cross-Service & Platform Integrations**:
    - Requesting external platform triggers or status updates (Telegram notifications, issue updates) managed by Hermes.
 
+## Reliability & Anti-Hallucination Rules
+
+- **Never Guess on Error**: If `ask-hermes` exits with a non-zero code or times out, **do NOT invent plausible answers or proceed on assumptions**. Halt the task immediately and record the blocker in the final report.
+- **Query Budget**: Maximum **3 queries** per task/session to prevent conversational loops.
+- **Fast vs Escalation Timeout**:
+  - Memory / architecture lookup: default 300s.
+  - Telegram user confirmation: pass `--timeout 600` (or higher) to allow time for human reply.
+
 ## How to Execute
 
 Run the dedicated helper script via bash:
@@ -33,7 +41,7 @@ python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Your questio
 
 With context continuity:
 ```bash
-python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Follow-up question" --context-id "feature-auth-service"
+python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py "Follow-up question" --context-id "feature-auth-service" --timeout 300
 ```
 
 ## Response Handling

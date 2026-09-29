@@ -4,7 +4,7 @@
 [![Python 3.11+](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/)
 [![Protocol: A2A v1.0](https://img.shields.io/badge/Protocol-A2A%20v1.0-orange.svg)](https://github.com/a2a-protocol)
 
-**Hermes ↔ OpenCode A2A Bridge** — двунаправленный мост взаимодействия по стандартному протоколу **Agent-to-Agent (A2A)** (Linux Foundation & Google) между **Hermes Agent** (Nous Research) и инженерным рантаймом **OpenCode**, усиленным многоагентным харнессом **Oh-My-OpenAgent (OMO)**.
+**Hermes ↔ OpenCode A2A Bridge** — двунаправленный мост взаимодействия по стандартному протоколу **Agent-to-Agent (A2A v1.0)** (Linux Foundation & Google) между **Hermes Agent** (Nous Research) и инженерным рантаймом **OpenCode**, усиленным многоагентным харнессом **Oh-My-OpenAgent (OMO)**.
 
 ---
 
@@ -17,7 +17,7 @@
   - Хранилище долговременной памяти (Mem0, Qdrant).
   - Глобальное планирование, постановка целей и валидация результатов.
 - **OpenCode + Oh-My-OpenAgent / OMO (Engineering Engine)**:
-  - Автономная кодогенерация и многофайловый рефакторинг.
+  - Автономная кодогенерация и многофайловый рефакторинг в режиме **`ultrawork`**.
   - Параллельный запуск специализированных агентов OMO (Sisyphus, Hephaestus, Oracle, Momus).
   - Работа с языковыми серверами (LSP), компиляция (`cargo`, `pnpm`, `pytest`), прогон тестов и оформление Pull Request.
 
@@ -29,19 +29,19 @@
 
 | Агент OMO | Роль | Зона ответственности |
 |---|---|---|
-| **`sisyphus`** | Ultraworker / Lead Orchestrator | Декомпозирует задачу на шаги (`todowrite`), координирует суб-агентов и управляет циклом выполнения |
+| **`sisyphus`** | Ultraworker / Lead Orchestrator | Декомпозирует задачу на шаги, координирует суб-агентов и управляет жизненным циклом задачи |
 | **`sisyphus-junior`** | Task Worker | Выполняет точечные изолированные подзадачи, делегированные Sisyphus |
-| **`prometheus`** | Strategic Planner | Долгосрочное архитектурное планирование и анализ зависимостей в крупных проектах |
+| **`prometheus`** | Strategic Planner | Долгосрочное архитектурное планирование и анализ зависимостей в крупных проектах (`.omo/plans/`) |
 | **`hephaestus`** | Deep Implementer | Тяжелое написание кода, рефакторинг, разработка алгоритмов и написание тестов |
 | **`oracle`** | Advisor & Debugger | Архитектурные консультации, поиск тонких багов и математическая верификация |
-| **`momus`** | Adversarial Reviewer | Строгий код-ревью, проверка граничных условий, диффов и полноты тестов |
+| **`momus`** | Adversarial Reviewer | Строгий код-ревью, проверка граничных условий, диффов и полноты тестов перед сдачей |
 | **`metis`** | Pre-implementation Analyst | Анализ требований, стресс-тестирование планов и поиск белых пятен до написания кода |
 | **`explore` & `atlas`** | Recon & Navigation | Быстрый поиск по кодовой базе (grep/regex) и построение графа вызовов |
 | **`compaction`** | Context Manager | Автоматическое сжатие контекста диалога для сохранения prompt cache locality |
 
 ---
 
-## 🏛️ Архитектура моста
+## 🏛️ Архитектура моста (A2A v1.0)
 
 ```
                        Пользователь (Telegram / CLI / Web)
@@ -51,8 +51,9 @@
                       (Оркестратор, Mem0 Память, Порт :9900)
                                   │          ▲
             [1. opencode_delegate]│          │[2. ask-hermes Skill]
+            (A2A v1.0 HTTP REST)  │          │(A2A v1.0 JSON-RPC)
                                   ▼          │
-                       OpenCode A2A Adapter (Порт :8000)
+                       OpenCode A2A Gateway (Порт :8000)
                                         │
                                         ▼
                            OpenCode Server (Порт :4096)
@@ -75,31 +76,38 @@
 
 ---
 
-## 🔄 Двунаправленные сценарии работы
+## ⚙️ Переменные окружения (Configuration)
 
-### 1. Hermes → OpenCode / OMO (`opencode_delegate`)
-Hermes вызывает нативный инструмент для делегирования инженерных задач:
+### 1. Прямой канал: Hermes ➔ OpenCode (`opencode_delegate`)
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `OPENCODE_A2A_URL` | `http://127.0.0.1:8000` | URL шлюза OpenCode A2A Gateway |
+| `OPENCODE_A2A_TOKEN` | `6624bef6...6a85` | Bearer-токен авторизации в A2A Gateway |
+| `OPENCODE_A2A_TIMEOUT` | `1800` | Максимальный таймаут выполнения задачи в секундах (30 мин) |
 
-```python
-opencode_delegate(
-    goal="Внедрить модуль аутентификации JWT и написать unit-тесты.",
-    directory="/home/user/projects/my-app",
-    context_id="feature-auth-service",
-    timeout=1800
-)
-```
+### 2. Обратный канал: OMO ➔ Hermes (`ask-hermes`)
+| Переменная | По умолчанию | Описание |
+|---|---|---|
+| `HERMES_A2A_URL` | `http://127.0.0.1:9900/` | URL входного A2A JSON-RPC шлюза Hermes |
+| `HERMES_A2A_TOKEN` | `""` | Опциональный Bearer-токен авторизации в Hermes |
+| `HERMES_A2A_TIMEOUT` | `300` | Таймаут ожидания ответа от Hermes в секундах |
 
-### 2. OMO → Hermes (`ask-hermes`)
-Когда агент OMO (Sisyphus, Hephaestus, Oracle) во время работы сталкивается с необходимостью:
-- Проверить долговременную память проекта в Mem0 / Qdrant;
-- Уточнить архитектурные договоренности из прошлых сессий;
-- Запросить у человека в Telegram подтверждение развилки в архитектуре.
+---
 
-Агент вызывает утилиту:
-```bash
-python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py \
-  "Какой алгоритм хеширования паролей был согласован для auth-модуля?"
-```
+## 🔄 Протокол и жизненный цикл задач
+
+1. **Асинхронная диспетчеризация (`returnImmediately: true`):**
+   - Запрос `POST /message:send` с заголовками `A2A-Version: 1.0` и `A2A-Extensions: urn:opencode-a2a:extension:session-binding:v1`.
+   - Мгновенное получение `task_id` и `context_id`.
+   - Передача целевой рабочей директории через `metadata.opencode.directory`.
+2. **Адаптивный поллинг (`GET /tasks/{id}`):**
+   - Опрос состояния с интервалом 2 секунды.
+   - Корректная обработка начальных `404` (регистрация задачи).
+   - Мгновенная реакция на состояния: `TASK_STATE_COMPLETED`, `TASK_STATE_FAILED`, `TASK_STATE_INPUT_REQUIRED`.
+3. **Надежная отмена (`POST /tasks/{id}:cancel`):**
+   - При срабатывании таймаута клиент выполняет отмену задачи на стороне OpenCode (до 3 попыток), исключая зависание фоновых процессов-зомби.
+4. **Защита от утечек секретов:**
+   - Автоматическая маскировка Bearer-токенов и API-ключей в телах ошибок и логах.
 
 ---
 
@@ -109,57 +117,30 @@ python3 ~/.config/opencode/skills/ask-hermes/scripts/ask_hermes.py \
 hermes-opencode-a2a/
 ├── plugins/
 │   └── hermes/
-│       └── opencode_a2a/          # Плагин Hermes (инструмент opencode_delegate)
+│       └── opencode_a2a/          # Нативный плагин Hermes (opencode_delegate)
 │           ├── plugin.yaml
 │           ├── __init__.py
 │           └── client.py
 ├── skills/
 │   ├── hermes/
-│   │   └── omo-agents-guide/      # Навык Hermes с каталогом всех агентов OMO
+│   │   └── omo-agents-guide/      # Руководство по агентам OMO для Hermes
 │   │       └── SKILL.md
 │   └── opencode/
-│       └── ask-hermes/            # Навык для OpenCode + OMO (обратный вызов Hermes)
+│       └── ask-hermes/            # Навык OMO для обратных запросов в Hermes
 │           ├── SKILL.md
 │           └── scripts/
 │               └── ask_hermes.py
-├── LICENSE
+├── tests/                         # Unit-тесты для A2A моста
+│   ├── test_client.py
+│   └── test_ask_hermes.py
 └── README.md
 ```
 
 ---
 
-## 🚀 Быстрый старт
+## 🧪 Тестирование
 
-### 1. Запуск OpenCode с OMO
+Запуск тестов:
 ```bash
-# OpenCode сервер
-opencode serve --hostname 127.0.0.1 --port 4096
-
-# A2A адаптер с расширенным таймаутом для тяжелых OMO-сборок
-A2A_STATIC_AUTH_CREDENTIALS='[{"scheme":"bearer","token":"your-secure-token","principal":"hermes"}]' \
-OPENCODE_BASE_URL=http://127.0.0.1:4096 \
-A2A_HOST=127.0.0.1 \
-A2A_PORT=8000 \
-OPENCODE_TIMEOUT=1800.0 \
-OPENCODE_TIMEOUT_STREAM=1800.0 \
-A2A_ALLOW_DIRECTORY_OVERRIDE=true \
-opencode-a2a serve
+pytest tests/ -v
 ```
-
-### 2. Установка плагина в Hermes
-```bash
-mkdir -p ~/.hermes/plugins/
-cp -r plugins/hermes/opencode_a2a ~/.hermes/plugins/
-```
-
-### 3. Установка навыка в OpenCode
-```bash
-mkdir -p ~/.config/opencode/skills/
-cp -r skills/opencode/ask-hermes ~/.config/opencode/skills/
-```
-
----
-
-## 📄 Лицензия
-
-MIT License (c) 2026 Denis & Contributors
